@@ -933,6 +933,9 @@ function buildFeaturedCards(){
   var c1=pick(live)||pick(done)||pick(wc);
   var c2=pick(live)||pick(upcoming)||pick(wc);
   var c3=pick(done)||pick(live)||pick(wc);
+  var c4=pick(upcoming)||pick(wc);
+  var c5=pick(upcoming)||pick(wc);
+  var c6=pick(upcoming)||pick(wc);
 
   function rc(m){
     if(!m)return '<div class="fc-card is-soon" style="opacity:.3;min-height:200px;display:flex;align-items:center;justify-content:center;"><span style="color:#555;">Không có trận</span></div>';
@@ -986,7 +989,7 @@ function buildFeaturedCards(){
         +'<div style="font-size:12px;font-weight:600;color:var(--wc-green);">'+m.d+' · '+m.t+'</div>'
       +'</div></div></div>';
   }
-  grid.innerHTML=rc(c1)+rc(c2)+rc(c3);
+  grid.innerHTML=rc(c1)+rc(c2)+rc(c3)+rc(c4)+rc(c5)+rc(c6);
 }
 
 // ===== GROUP CAROUSEL =====
@@ -1275,33 +1278,43 @@ document.addEventListener('click', function(e){
 
 <script>
 (function(){
-  function initAutoScroll(){
+  function initCarousel(){
     var grid = document.getElementById('featuredCards');
     if(!grid || grid.children.length === 0) return;
-    // Clone cards để tạo vòng lặp vô tận
-    var cards = Array.from(grid.children);
-    cards.forEach(function(c){ grid.appendChild(c.cloneNode(true)); });
-    var speed = 0.6; // px per frame
+    // Clone all cards for infinite loop
+    var origCards = Array.from(grid.children);
+    origCards.forEach(function(c){ grid.appendChild(c.cloneNode(true)); });
+    var cardWidth = origCards[0].offsetWidth + 14; // 14 = gap
+    var currentIndex = 0;
+    var total = origCards.length;
     var paused = false;
+    grid.style.transition = 'none';
+    grid.scrollLeft = 0;
     grid.addEventListener('mouseenter', function(){ paused = true; });
     grid.addEventListener('mouseleave', function(){ paused = false; });
     grid.addEventListener('touchstart', function(){ paused = true; }, {passive:true});
-    grid.addEventListener('touchend', function(){ setTimeout(function(){ paused = false; }, 2000); }, {passive:true});
-    var half = grid.scrollWidth / 2;
-    function tick(){
-      if(!paused){
-        grid.scrollLeft += speed;
-        if(grid.scrollLeft >= half) grid.scrollLeft = 0;
+    grid.addEventListener('touchend', function(){ setTimeout(function(){ paused = false; }, 3000); }, {passive:true});
+    setInterval(function(){
+      if(paused) return;
+      currentIndex++;
+      var targetScroll = currentIndex * cardWidth;
+      // Smooth CSS scroll
+      grid.style.scrollBehavior = 'smooth';
+      grid.scrollLeft = targetScroll;
+      // Reset về đầu khi đến cuối clone
+      if(currentIndex >= total){
+        setTimeout(function(){
+          grid.style.scrollBehavior = 'auto';
+          grid.scrollLeft = 0;
+          currentIndex = 0;
+        }, 600);
       }
-      requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
+    }, 4000); // 4 giây mỗi card
   }
-  // Chờ cards render xong
   var tries = 0;
   var check = setInterval(function(){
     var grid = document.getElementById('featuredCards');
-    if(grid && grid.children.length > 0){ clearInterval(check); initAutoScroll(); }
+    if(grid && grid.children.length > 0){ clearInterval(check); setTimeout(initCarousel, 300); }
     if(++tries > 50) clearInterval(check);
   }, 200);
 })();
